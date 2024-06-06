@@ -61,7 +61,7 @@ services:
       retries: 5
 
   oai-nr-ue:
-    image: oai-nr-ue-winlab:2024.w21
+    image: justin89721/oai-nr-ue:2024.w21
     privileged: true
     container_name: oai-nr-ue
     environment:
