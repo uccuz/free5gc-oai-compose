@@ -216,6 +216,7 @@ services:
 
 networks:
   privnet:
+    name: privnet
     ipam:
       driver: default
       config:

@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  oai-cucp:
+    image: oaisoftwarealliance/oai-gnb:2024.w21
+    container_name: oai-cucp
+    privileged: true
+    environment:
+      USE_ADDITIONAL_OPTIONS: --sa --log_config.global_log_options level,nocolor,time
+      ASAN_OPTIONS: detect_leaks=0
+    networks:
+      privnet:
+        ipv4_address: 10.100.200.30
+    volumes:
+      - ./conf_files/gnb-cucp.sa.f1.conf:/opt/oai-gnb/etc/gnb.conf
+    healthcheck:
+      test: /bin/bash -c "pgrep nr-softmodem"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  oai-cuup:
+    image: oaisoftwarealliance/oai-nr-cuup:2024.w21
+    container_name: oai-cuup
+    privileged: true
+    environment:
+      USE_ADDITIONAL_OPTIONS: --sa --log_config.global_log_options level,nocolor,time
+      ASAN_OPTIONS: detect_leaks=0
+    depends_on:
+      - oai-cucp
+    networks:
+      privnet:
+        ipv4_address: 10.100.200.31
+    volumes:
+      - ./conf_files/gnb-cuup.sa.f1.conf:/opt/oai-gnb/etc/gnb.conf
+    healthcheck:
+      test: /bin/bash -c "pgrep nr-cuup"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  oai-du:
+    image: oaisoftwarealliance/oai-gnb:2024.w21
+    container_name: oai-du
+    privileged: true
+    environment:
+      USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
+      ASAN_OPTIONS: detect_leaks=0
+    depends_on:
+      - oai-cucp
+      - oai-cuup
+    networks:
+      privnet:
+        ipv4_address: 10.100.200.32
+    volumes:
+      - ./conf_files/gnb-du.sa.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
+    healthcheck:
+      test: /bin/bash -c "pgrep nr-softmodem"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  oai-nr-ue:
+    image: oai-nr-ue-winlab:2024.w21
+    privileged: true
+    container_name: oai-nr-ue
+    environment:
+      USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
+                              -r 106 --numerology 1 -C 3619200000
+                              --rfsimulator.serveraddr 10.100.200.32
+    depends_on:
+      - oai-du
+    networks:
+      privnet:
+        ipv4_address: 10.100.200.33
+    volumes:
+      - ./conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+    healthcheck:
+      test: /bin/bash -c "pgrep nr-uesoftmodem"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  privnet:
+    external: true
